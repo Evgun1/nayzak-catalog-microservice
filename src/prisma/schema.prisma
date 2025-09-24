@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum ProductsStatus {
+    outOfStock
+    inStock
+    discontinued
+}
+
+model Products {
+    id                Int                 @id @default(autoincrement())
+    title             String              @db.VarChar(255)
+    price             Int
+    createdAt         DateTime            @default(now())
+    updatedAt         DateTime            @updatedAt
+    description       String
+    discount          Int
+    rating            Int                 @default(0)
+    status            ProductsStatus      @default(inStock)
+    Subcategories     Subcategories       @relation(fields: [subcategoriesId], references: [id])
+    subcategoriesId   Int
+    Categories        Categories          @relation(fields: [categoriesId], references: [id])
+    categoriesId      Int
+    Media             Media[]
+    ProductsAttribute ProductsAttribute[]
+}
+
+model Subcategories {
+    id                   Int                    @id @default(autoincrement())
+    title                String                 @db.VarChar(255)
+    Products             Products[]
+    Categories           Categories             @relation(fields: [categoriesId], references: [id])
+    categoriesId         Int
+    AttributeDefinitions AttributeDefinitions[]
+    Media                Media[]
+}
+
+model Categories {
+    id          Int             @id @default(autoincrement())
+    title       String          @db.VarChar(255)
+    Products    Products[]
+    Subcategory Subcategories[]
+    Media       Media[]
+}
+
+model AttributeDefinitions {
+    id               Int                 @id @default(autoincrement())
+    name             String
+    type             String
+    unit             String?
+    Subcategories    Subcategories       @relation(fields: [subcategoriesId], references: [id])
+    subcategoriesId  Int
+    ProductAttribute ProductsAttribute[]
+
+    @@unique([subcategoriesId, type])
+}
+
+model ProductsAttribute {
+    id                     Int                   @id @default(autoincrement())
+    AttributeDefinitions   AttributeDefinitions? @relation(fields: [attributeDefinitionsId], references: [id])
+    attributeDefinitionsId Int
+    Products               Products?             @relation(fields: [productsId], references: [id])
+    productsId             Int?
+}
+
+model Media {
+    id              Int            @id @default(autoincrement())
+    name            String         @db.Text
+    src             String         @db.Text
+    customersId     Int?
+    Products        Products?      @relation(fields: [productsId], references: [id])
+    productsId      Int?
+    Categories      Categories?    @relation(fields: [categoriesId], references: [id])
+    categoriesId    Int?
+    Subcategories   Subcategories? @relation(fields: [subcategoriesId], references: [id])
+    subcategoriesId Int?
+}
